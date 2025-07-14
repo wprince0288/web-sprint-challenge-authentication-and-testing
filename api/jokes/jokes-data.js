@@ -13,6 +13,5 @@ const jokes = [
     "joke": "Why didn’t the skeleton cross the road? Because he had no guts."
   },
 ];
-console.log('test commit')
 
 module.exports = jokes;
