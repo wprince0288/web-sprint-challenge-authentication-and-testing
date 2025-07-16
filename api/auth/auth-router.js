@@ -4,11 +4,27 @@ const jwt = require('jsonwebtoken');
 const validation = require('./auth-middleware.js');
 const JWT_SECRET = process.env.JWT_SECRET || 'shh';
 
+function generateToken(user) {
+  const payload = {
+    subject: user.id,
+    username: user.username,
+  };
+  const options = {
+    expiresIn: '1d',
+  };
+  return jwt.sign(payload, JWT_SECRET, options)
+}
+
 router.post('/register', validation, async (req, res) => {
   try {
     const { username, password } = req.body
     if (!username || !password)
       return res.status(400).json({ message: 'username and password required' })
+
+    const existing = await Users.findBy({ username }).first();
+    if (existing)
+      return res.status(400).json({ message: 'username taken' });
+
     const hash = bcrypt.hashSync(password, 8);
     const newUser = await Users.add({ username, password: hash })
     res.status(201).json(newUser)
@@ -17,16 +33,7 @@ router.post('/register', validation, async (req, res) => {
   }
   // res.end('implement register, please!');
 
-  function generateToken(user) {
-    const payload = {
-      subject: user.id,
-      username: user.username,
-    };
-    const options = {
-      expiresIn: '1d',
-    };
-    return jwt.sign(payload, JWT_SECRET, options)
-  }
+
 
   /*
     IMPLEMENT
@@ -58,6 +65,10 @@ router.post('/register', validation, async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
+    if (!username || !password)
+      return res.status(400).json({ message: 'username and password required ' })
+
+
     const user = await Users.findBy({ username }).first()
 
     if (user && bcrypt.compareSync(password, user.password)) {
