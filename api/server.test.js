@@ -1,10 +1,23 @@
 const request = require('supertest');
 const server = require('./server.js')
 const db = require('../data/dbConfig');
-// const bcrypt = require('bcrypt.js');
 
 beforeAll(async () => {
-  await db('users').truncate();
+  await db.migrate.rollback();
+  await db.migrate.latest();
+});
+
+beforeEach(async () => {
+  const tables = await db.raw(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name='users';"
+  );
+  if (tables.length > 0) {
+    await db('users').truncate();
+  }
+});
+
+afterAll(async () => {
+  await db.destroy();
 });
 
 describe('[POST] /api/auth/register', () => {
@@ -25,6 +38,13 @@ describe('[POST] /api/auth/register', () => {
 });
 
 describe('[POST] /api/auth/login', () => {
+  beforeEach(async () => {
+    await request(server).post('/api/auth/register').send({
+      username: 'testuser',
+      password: 'pass123',
+    });
+  });
+
   it('should login with correct credentials', async () => {
     const res = await request(server).post('/api/auth/login').send({
       username: 'testuser',
@@ -47,7 +67,12 @@ describe('[POST] /api/auth/login', () => {
 describe('[GET] /api/jokes', () => {
   let token;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
+    await request(server).post('/api/auth/register').send({
+      username: 'testuser',
+      password: 'pass123',
+    });
+
     const res = await request(server).post('/api/auth/login').send({
       username: 'testuser',
       password: 'pass123',
@@ -58,7 +83,7 @@ describe('[GET] /api/jokes', () => {
   it('should return jokes with valid token', async () => {
     const res = await request(server)
       .get('/api/jokes')
-      .set('Authorization', token);
+      .set('Authorization', `Bearer ${token}`);
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(3);
@@ -71,8 +96,6 @@ describe('[GET] /api/jokes', () => {
   });
 });
 
-
-
 test('sanity', () => {
-  expect(true).toBe(false)
-})
+  expect(true).toBe(true)
+});

@@ -1,18 +1,41 @@
 const db = require("../../data/dbConfig")
+module.exports = validation
 
-module.exports = async function validation(req, res, next) {
+
+async function validation(req, res, next) {
+
     try {
-        const { username, password } = req.body;
-        if (!username || !password) {
-            return res.status(400).json({ message: 'username and password required' })
-        }
-        const existingUser = await db('users').where('username', username).first()
+        let user = req.body.username
+        let username = await db("users").select("username").where("username", user).first()
+        console.log(!req.body.username, !req.body.password)
 
-        if (existingUser) {
-            return res.status(400).json({ message: 'username taken' })
+        if (!req.body.username || !req.body.password || !req.body) {
+            return res.status(401).json({ message: "username and password required" })
         }
-        next();
+
+        if (username) {
+            return res.status(401).json({ message: "username taken" })
+        }
+        next()
+
+
     } catch (error) {
-        res.status(500).json({ message: 'internal error', error: error.message })
+        res.status(400).json({ message: "username and password required" })
     }
-};
+
+    //     try {
+    //         const { username, password } = req.body;
+    //         if (!username || !password) {
+    //             return res.status(401).json({ message: 'username and password required' })
+    //         }
+    //         const existingUser = await db('users').where('username', username).first()
+
+    //         if (existingUser) {
+    //             return res.status(401).json({ message: 'username taken' })
+    //         }
+    //         next();
+
+    //     } catch (error) {
+    //         res.status(400).json({ message: 'username and pass required'})
+    //     }
+}
