@@ -14,7 +14,7 @@ server.use(cors());
 server.use(express.json());
 
 server.use('/api/auth', authRouter);
-server.use('/api/jokes', restrict, jokesRouter); 
+server.use('/api/jokes', restrict, jokesRouter);
 server.get('/', (req, res) => {
     res.json({ message: 'Server is up and runnaning!' });
 });
